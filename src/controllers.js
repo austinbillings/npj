@@ -100,8 +100,6 @@ function runPackageScript (packageName, scriptName) {
 }
 
 async function runPromiseChain (chain) {
-    zaq.info('Running promise chain', chain.map(fn => fn.toString()))
-
     for (i=0; i<chain.length; i++) {
         await chain[i]();
     }
