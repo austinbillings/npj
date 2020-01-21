@@ -1,0 +1,25 @@
+{
+  "name": "npj",
+  "version": "0.0.1",
+  "description": "Node Package Jumper: a global cli for javascript natives.'",
+  "main": "src/cli.js",
+  "bin": "src/cli.js",
+  "scripts": {
+    "test": "node tests/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/austinbillings/npj.git"
+  },
+  "author": "Austin B. <ab@austinbillings.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/austinbillings/npj/issues"
+  },
+  "homepage": "https://github.com/austinbillings/npj#readme",
+  "dependencies": {
+    "chalk": "^3.0.0",
+    "commander": "^4.1.0",
+    "zaq": "^2.1.3"
+  }
+}
