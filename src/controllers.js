@@ -112,7 +112,7 @@ function handlePackageDirective () {
         throw `No command or packageName given.`
 
     const workload = params.map(param => {
-        const [ packageName, scriptTarget ] = param.split(':')
+        const [ packageName, scriptTarget ] = param.split(':', 2)
 
         if (!existsInRegistry(packageName))
             throw `"${packageName}" is not in the registry.`
