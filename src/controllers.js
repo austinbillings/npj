@@ -82,32 +82,51 @@ function handleListPackageScripts ([ packageName ] = []) {
         zaq.warn(`"${packageName}" contains no scripts`)
 }
 
+function runPackageScript (packageName, scriptName) {
+    return new Promise((resolve, reject) => {
+        scriptLogger(`${packageName}: Running script «${scriptName}»`)
+
+        const runner = spawn('npm', ['run', scriptName], { cwd: getPackagePath(packageName)})
+
+        runner.stdout.on('data', data => console.log(`${data}`))
+        runner.stderr.on('data', data => console.log(`${data}`))
+        runner.on('error', (error) => zaq.err(`error: ${error.message}`))
+        runner.on('close', (code) => {
+            scriptLogger(`script process exited with code ${code}`)
+
+            return code ? reject(code) : resolve(code)
+        })
+    })
+}
+
+async function runPromiseChain (chain) {
+    zaq.info('Running promise chain', chain.map(fn => fn.toString()))
+
+    for (i=0; i<chain.length; i++) {
+        await chain[i]();
+    }
+}
+
 function handlePackageDirective () {
-    const [ exe, exePath, ...params ] = process.argv
+    let [ exe, exePath, ...params ] = process.argv
 
     if (!params.length)
         throw `No command or packageName given.`
 
-    const [ packageName, scriptTarget ] = params[0].split(':')
+    const workload = params.map(param => {
+        const [ packageName, scriptTarget ] = param.split(':')
 
-    if (!existsInRegistry(packageName))
-        throw `"${packageName}" is not in the registry.`
+        if (!existsInRegistry(packageName))
+            throw `"${packageName}" is not in the registry.`
 
-    if (!scriptTarget)
-        return handleListPackageScripts([packageName])
+        const task = !scriptTarget
+            ? () => () => new Promise(resolve => resolve(handleListPackageScripts([packageName])))
+            : () => runPackageScript(packageName, scriptTarget)
 
-    scriptLogger(`Running script «${scriptTarget}»`)
-    process.chdir(getPackagePath(packageName))
-
-    const runner = spawn('npm', ['run', scriptTarget])
-
-    runner.stdout.on('data', data => console.log(`${data}`))
-    runner.stderr.on('data', data => console.log(`${data}`))
-    runner.on('error', (error) => zaq.err(`error: ${error.message}`))
-    runner.on('close', (code) => {
-        scriptLogger(`script process exited with code ${code}`)
-        process.chdir(CURRENT_DIR_PATH)
+        return task
     })
+
+    runPromiseChain(workload)
 }
 
 module.exports = {

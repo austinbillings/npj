@@ -32,11 +32,9 @@ cli.version(version)
         ${cyan('npj scripts')} ${blue('<packageName>')}
             Shows the list of scripts set in <packageName>.
 
-        ${cyan('npj')} ${blue('<packageName>')}
-            Jumps to the directory where <projectName> lives.
-
         ${cyan('npj')} ${blue('<packageName>:<scriptName>')}
             Runs the script listed as <scriptName> within the <packageName> directory.
+            When multiple <packageName>:<scriptName> sets are provided, they are run in sequence.
     `)
     .option('-f, --force', 'Overwrites existing saved registry package when used with "npj add <packageName>"')
 
@@ -78,6 +76,7 @@ cli.command('remove')
     .action(wrapActionHandler('remove current directory', controllers.handleRemoveCurrent))
 
 cli.command('scripts')
+    .description(`Shows the list of scripts set in <packageName>.`)
     .action(wrapActionHandler('list package scripts', controllers.handleListPackageScripts))
 
 cli.parse(process.argv)
@@ -86,5 +85,5 @@ const acceptableCommands = ['add', 'ls', 'remove', 'scripts']
 
 if (process.argv.length === 2)
     wrapActionHandler('run default command', controllers.handleListRegistry)()
-if (process.argv.length <= 3 && !acceptableCommands.includes(process.argv[2]))
+if (process.argv.length >= 3 && !acceptableCommands.includes(process.argv[2]))
     wrapActionHandler('run package directive', controllers.handlePackageDirective)()
