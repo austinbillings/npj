@@ -3,11 +3,10 @@ const chalk = require('chalk')
 const cli = require('commander')
 const zaq = require('zaq')
 
-const { fileExists, loadPackage } = require('./utils')
 const { version } = require('../package.json')
 const controllers = require('./controllers')
 
-const { dim, yellow, cyan, bold, blue, white } = chalk
+const { yellow, cyan, bold, white } = chalk
 const { getRegistry, addToRegistry, removeFromRegistry, existsInRegistry, getPackagePath } = require('./registry')
 
 cli.version(version)
@@ -15,7 +14,7 @@ cli.version(version)
 
         Navigate to any directory containing a package.json and simply run ${cyan('npj add')}.
         Now, that directory is a part of your global register (which you can view using ${cyan('npj ls')}).
-        Entries in the register are keyed by the project's ${dim('name')} according to its package.json.
+        Entries in the register are keyed by the project's ${bold('name')} according to its package.json.
 
         ${cyan('npj ls')}
             Shows the packages, including versions and paths, currently in your registry.
@@ -26,13 +25,13 @@ cli.version(version)
             ${yellow('-f --force')} Overwrites an existing entry's path.
                 Without this flag, adding a duplicate <projectName> will fail.
 
-        ${cyan('npj remove')} ${blue('<packageName>')}
+        ${cyan('npj remove')} ${bold('<packageName>')}
             Removes the package named by <packageName> from your global registry.
 
-        ${cyan('npj scripts')} ${blue('<packageName>')}
+        ${cyan('npj scripts')} ${bold('<packageName>')}
             Shows the list of scripts set in <packageName>.
 
-        ${cyan('npj')} ${blue('<packageName>:<scriptName>')}
+        ${cyan('npj')} ${bold('<packageName>:<scriptName>')}
             Runs the script listed as <scriptName> within the <packageName> directory.
             When multiple <packageName>:<scriptName> sets are provided, they are run in sequence.
     `)
