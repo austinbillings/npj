@@ -27,7 +27,7 @@ npj --help
 cd my-project # anything with a package.json will do
 npj add
 ```
-_Output:_
+
 ```
 [NPJ] ✓ OK:    my-project -> /Users/admin/code/my-project @0.0.1
 ```
@@ -38,7 +38,7 @@ _Output:_
 ```sh
 npj ls
 ```
-_Output:_
+
 ```
 [NPJ] «package»  my-project @0.0.1
 [NPJ] >>>>       -->--> /Users/admin/code/my-project
@@ -52,7 +52,7 @@ cd ../some-other-project
 npj add
 ```
 
-_Output:_
+
 ```
 [NPJ] ✓ OK:    some-other-project -> /Users/admin/code/some-other-project @1.0.3
 ```
@@ -71,7 +71,7 @@ cd my-project
 npj remove
 ```
 
-_Output:_
+
 ```
 [NPJ] ✓ OK:    Removed "some-other-project" from registry
 ```
@@ -84,7 +84,7 @@ _Output:_
 npj scripts my-package
 ```
 
-_Output:_
+
 
 ```
 [NPJ] «package»  my-package @0.0.1
@@ -105,7 +105,7 @@ When multiple `<packageName>:<scriptName>` sets are provided, they are run in se
 npj my-project:build my-project:test
 ```
 
-_Output:_
+
 ```
 [NPJ] «script»   my-project: Running script «build»
 
