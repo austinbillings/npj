@@ -1,6 +1,6 @@
 {
   "name": "npj",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Node Package Jumper: a global cli for javascript natives.'",
   "main": "src/cli.js",
   "bin": "src/cli.js",
