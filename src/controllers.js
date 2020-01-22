@@ -30,7 +30,7 @@ function handleRemovePackage (dirPath) {
     const package = loadPackage(dirPath)
     const packageExists = existsInRegistry(package.name)
 
-    if (!packageExists && dirPath === existingPackagePath)
+    if (!packageExists)
         throw `"${package.name}" is not in the registry`
 
     removeFromRegistry(package.name, dirPath)
@@ -95,7 +95,7 @@ function handlePrintPackageDir ([ packageName ] = []) {
 
     const dirPath = getPackagePath(packageName)
 
-    console.log(dirPath);
+    console.log(dirPath)
 }
 
 function runPackageScript (packageName, scriptName) {
@@ -160,7 +160,6 @@ function handlePrintPackageManifest ([ packageName ] = []) {
     const package = loadPackage(dirPath)
 
     logPackage(packageName, package.version, dirPath.concat('\n', JSON.stringify(package, null, '  ')))
-    zaq.info('', )
 }
 
 module.exports = {
