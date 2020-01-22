@@ -1,13 +1,14 @@
 const fs = require('fs')
 const path = require('path')
-const homeDir = require('os').homedir()
-const { omit, fileExists } = require('./utils');
+const { omit, fileExists, loadPackage } = require('./utils');
 
-const loadRegistry = (registryPath) => JSON.parse(fs.readFileSync(registryPath, 'utf-8'))
-const saveRegistry = (registry, registryPath) => fs.writeFileSync(registryPath, JSON.stringify(registry))
+const HOME_DIR = require('os').homedir()
+const REGISTRY_PATH = path.resolve(HOME_DIR, '.npj-registry')
 
-const registryPath = path.resolve(homeDir, '.npj-registry')
-const getRegistry = () => !fileExists(registryPath) ? {} : loadRegistry(registryPath)
+const loadRegistry = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+const saveRegistry = (registry, filePath) => fs.writeFileSync(filePath, JSON.stringify(registry))
+
+const getRegistry = () => !fileExists(REGISTRY_PATH) ? {} : loadRegistry(REGISTRY_PATH)
 const existsInRegistry = (packageName) => Object.keys(getRegistry()).includes(packageName)
 
 const addToRegistry = (packageName, dirPath) => {
@@ -15,14 +16,14 @@ const addToRegistry = (packageName, dirPath) => {
     const addition = { [packageName]: dirPath }
     const updatedRegistry = Object.assign({}, existingRegistry, addition)
 
-    return saveRegistry(updatedRegistry, registryPath)
+    return saveRegistry(updatedRegistry, REGISTRY_PATH)
 }
 
 const removeFromRegistry = (packageName) => {
     const existingRegistry = getRegistry()
     const updatedRegistry = omit(existingRegistry, packageName)
 
-    return saveRegistry(updatedRegistry, registryPath)
+    return saveRegistry(updatedRegistry, REGISTRY_PATH)
 }
 
 const getPackagePath = (packageName) => {
@@ -31,10 +32,21 @@ const getPackagePath = (packageName) => {
     return getRegistry()[packageName]
 }
 
+const packageHasScript = (packageName, scriptName) => {
+    if (!existsInRegistry(packageName)) throw `${packageName} is not in your registry`
+
+    const dirPath = getPackagePath(packageName)
+    const package = loadPackage(dirPath)
+    const hasScript = Object.keys(package.scripts).includes(packageName)
+
+    return hasScript
+}
+
 module.exports = {
     getRegistry,
     addToRegistry,
     removeFromRegistry,
     existsInRegistry,
-    getPackagePath
+    getPackagePath,
+    packageHasScript
 }
