@@ -10,6 +10,20 @@ function loadPackage (dirPath) {
     return require(packagePath);
 }
 
+async function runAsyncChain (chain) {
+    const state = {
+        results: [],
+        current: null
+    };
+
+    for (i=0; i<chain.length; i++) {
+        state.current = await chain[i]();
+        state.results = state.results.concat(state.current);
+    }
+
+    return state.results;
+}
+
 function fileExists (path) {
 	let exists = false;
 	try {
@@ -39,5 +53,6 @@ module.exports = {
     fileExists,
     dirExists,
     omit,
-    loadPackage
+    loadPackage,
+    runAsyncChain
 };
