@@ -1,10 +1,12 @@
-const zaq = require('zaq').as('NPJ')
+const zaq = require('zaq').as('npj')
 const { spawn, exec } = require('child_process')
 const { dim, cyan, reset, bold, yellow } = require('chalk')
-const { loadPackage } = require('./utils')
-const { existsInRegistry, getPackagePath, addToRegistry, removeFromRegistry, getRegistry } = require('./registry')
+const { loadPackage, runAsyncChain } = require('./utils')
+const { existsInRegistry, getPackagePath, addToRegistry, removeFromRegistry, getRegistry, packageHasScript } = require('./registry')
 
 const CURRENT_DIR_PATH = process.cwd()
+
+const printBorder = (color) => zaq.divider(dim('|'), { lineSymbol: dim('•'), centered: false, lineColor: color || 'dim' })
 
 function handleAddPackage (dirPath) {
     const package = loadPackage(dirPath)
@@ -13,13 +15,15 @@ function handleAddPackage (dirPath) {
     const banner = `${package.name} -> ${dirPath} ${cyan(`@${package.version}`)}`
 
     if (packageExists && dirPath === existingPackagePath)
-        return zaq.ok(`${banner} ${dim('(already set)')}`)
+        return printBorder('green'), zaq.ok(`${banner} ${dim('(already set)')}`), printBorder('green')
     if (packageExists && !options.force)
         throw `"${package.name}" is already in the registry; currently set to ${existingPackagePath}. (Run again using -f/--force to overwrite)`
 
     addToRegistry(package.name, dirPath)
 
+    printBorder('green')
     zaq.ok(banner)
+    printBorder('green')
 }
 
 function handleRemovePackage (dirPath) {
@@ -60,7 +64,8 @@ function handleListRegistry () {
     })
 
     if (!keys.length)
-        zaq.warn(`The registry is currently empty. (See ${bold('npj --help')} for more information)`)
+        return printBorder('yellow'),
+            zaq.warn(`The registry is currently empty.`, dim(`(See ${bold('npj --help')} for more information)`))
 }
 
 function handleListPackageScripts ([ packageName ] = []) {
@@ -82,6 +87,17 @@ function handleListPackageScripts ([ packageName ] = []) {
         zaq.warn(`"${packageName}" contains no scripts`)
 }
 
+function handlePrintPackageDir ([ packageName ] = []) {
+    if (!packageName)
+        throw `No <packageName> provided.`
+    if (!existsInRegistry(packageName))
+        throw `"${packageName}" is not in the registry`
+
+    const dirPath = getPackagePath(packageName)
+
+    console.log(dirPath);
+}
+
 function runPackageScript (packageName, scriptName) {
     return new Promise((resolve, reject) => {
         scriptLogger(`${packageName}: Running script «${scriptName}»`)
@@ -99,32 +115,52 @@ function runPackageScript (packageName, scriptName) {
     })
 }
 
-async function runPromiseChain (chain) {
-    for (i=0; i<chain.length; i++) {
-        await chain[i]();
-    }
-}
-
 function handlePackageDirective () {
-    let [ exe, exePath, ...params ] = process.argv
+    const [ exe, exePath, ...triggers ] = process.argv
 
-    if (!params.length)
+    if (!triggers.length)
         throw `No command or packageName given.`
 
-    const workload = params.map(param => {
-        const [ packageName, scriptTarget ] = param.split(':', 2)
+    const workload = triggers.map(trigger => {
+        const [ packageName, scriptName ] = trigger.split(':', 2)
 
         if (!existsInRegistry(packageName))
             throw `"${packageName}" is not in the registry.`
+        if (scriptName && !packageHasScript(packageName, scriptName))
+            throw `No such script "${yellow(scriptName)}" in ${bold(packageName)}`
 
-        const task = !scriptTarget
-            ? () => () => new Promise(resolve => resolve(handleListPackageScripts([packageName])))
-            : () => runPackageScript(packageName, scriptTarget)
+        const task = scriptName
+            ? () => runPackageScript(packageName, scriptName)
+            : () => () => new Promise(resolve => resolve(handleListPackageScripts([packageName])))
 
         return task
     })
 
-    runPromiseChain(workload)
+    return runAsyncChain(workload)
+}
+
+function handleGoToPackageDir ([ packageName ] = []) {
+    if (!packageName)
+        throw `No <packageName> provided.`
+    if (!existsInRegistry(packageName))
+        throw `"${packageName}" is not in the registry`
+
+    const dirPath = getPackagePath(packageName)
+
+    console.log(`cd ${dirPath}`)
+}
+
+function handlePrintPackageManifest ([ packageName ] = []) {
+    if (!packageName)
+        throw `No <packageName> provided.`
+    if (!existsInRegistry(packageName))
+        throw `"${packageName}" is not in the registry`
+
+    const dirPath = getPackagePath(packageName)
+    const package = loadPackage(dirPath)
+
+    logPackage(packageName, package.version, dirPath.concat('\n', JSON.stringify(package, null, '  ')))
+    zaq.info('', )
 }
 
 module.exports = {
@@ -134,5 +170,8 @@ module.exports = {
     handleRemoveCurrent,
     handleListRegistry,
     handleListPackageScripts,
-    handlePackageDirective
+    handlePrintPackageDir,
+    handlePackageDirective,
+    handleGoToPackageDir,
+    handlePrintPackageManifest
 }
