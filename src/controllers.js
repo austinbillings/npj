@@ -1,6 +1,6 @@
 const zaq = require('zaq').as('npj')
 const { spawn, exec } = require('child_process')
-const { dim, cyan, reset, bold, yellow } = require('chalk')
+const { dim, cyan, red, reset, bold, yellow } = require('chalk')
 const { loadPackage, runAsyncChain } = require('./utils')
 const { existsInRegistry, getPackagePath, addToRegistry, removeFromRegistry, getRegistry, packageHasScript } = require('./registry')
 
@@ -8,7 +8,7 @@ const CURRENT_DIR_PATH = process.cwd()
 
 const printBorder = (color) => zaq.divider(dim('|'), { lineSymbol: dim('•'), centered: false, lineColor: color || 'dim' })
 
-function handleAddPackage (dirPath) {
+function handleAddPackage (dirPath, options) {
     const package = loadPackage(dirPath)
     const packageExists = existsInRegistry(package.name)
     const existingPackagePath = packageExists ? getPackagePath(package.name) : null
@@ -17,7 +17,7 @@ function handleAddPackage (dirPath) {
     if (packageExists && dirPath === existingPackagePath)
         return printBorder('green'), zaq.ok(`${banner} ${dim('(already set)')}`), printBorder('green')
     if (packageExists && !options.force)
-        throw `"${package.name}" is already in the registry; currently set to ${existingPackagePath}. (Run again using -f/--force to overwrite)`
+        throw `"${package.name}" is already in the registry; currently set to ${existingPackagePath}.\n(Run again using -f/--force to overwrite)`
 
     addToRegistry(package.name, dirPath)
 
@@ -38,18 +38,20 @@ function handleRemovePackage (dirPath) {
     zaq.ok(`Removed "${package.name}" from registry`)
 }
 
-function handleRemoveCurrent () {
+function handleRemoveCurrent (cmd, args) {
     return handleRemovePackage(CURRENT_DIR_PATH)
 }
 
-function handleAddCurrent () {
-    return handleAddPackage(CURRENT_DIR_PATH)
+function handleAddCurrent (cmd) {
+    return handleAddPackage(CURRENT_DIR_PATH, cmd)
 }
 
 const packageLogger = zaq.createLogStyle({ style: 'cyan', level: 'info', prefix: dim('«package»  ') })
+const errorLogger = zaq.createLogStyle({ style: 'red', level: 'info', prefix: dim('«error»    ') })
 const scriptLogger = zaq.createLogStyle({ style: 'yellow', level: 'info', prefix: dim('«script»   ') })
 
 const logPackage = (name, version, path) => packageLogger(`${name} ${cyan(`@${version}`)}`, `${dim.cyan('-->-->')} ${path}`)
+const logPackageError = (name, version, err) => errorLogger(`${name} ${red(`unavailable`)}`, `${dim.red('-->-->')} ${err}`)
 const logScript = (name, contents) => scriptLogger(yellow(name), `   ${dim(contents)}`)
 
 function handleListRegistry () {
@@ -58,9 +60,13 @@ function handleListRegistry () {
 
     keys.forEach((key) => {
         const dirPath = registry[key]
-        const package = loadPackage(dirPath)
+        try {
+            const package = loadPackage(dirPath)
 
-        logPackage(key, package.version, dirPath)
+            logPackage(key, package.version, dirPath)
+        } catch (e) {
+            logPackageError(key, '!!!', e);
+        }
     })
 
     if (!keys.length)
@@ -68,7 +74,7 @@ function handleListRegistry () {
             zaq.warn(`The registry is currently empty.`, dim(`(See ${bold('npj --help')} for more information)`))
 }
 
-function handleListPackageScripts ([ packageName ] = []) {
+function handleListPackageScripts (cmd, [ packageName ] = []) {
     if (!packageName)
         throw `No <packageName> provided.`
     if (!existsInRegistry(packageName))
@@ -87,7 +93,7 @@ function handleListPackageScripts ([ packageName ] = []) {
         zaq.warn(`"${packageName}" contains no scripts`)
 }
 
-function handlePrintPackageDir ([ packageName ] = []) {
+function handlePrintPackageDir (cmd, [ packageName ] = []) {
     if (!packageName)
         throw `No <packageName> provided.`
     if (!existsInRegistry(packageName))
@@ -139,7 +145,7 @@ function handlePackageDirective () {
     return runAsyncChain(workload)
 }
 
-function handleGoToPackageDir ([ packageName ] = []) {
+function handleGoToPackageDir (cmd, [ packageName ] = []) {
     if (!packageName)
         throw `No <packageName> provided.`
     if (!existsInRegistry(packageName))
@@ -150,7 +156,7 @@ function handleGoToPackageDir ([ packageName ] = []) {
     console.log(`cd ${dirPath}`)
 }
 
-function handlePrintPackageManifest ([ packageName ] = []) {
+function handlePrintPackageManifest (cmd, [ packageName ] = []) {
     if (!packageName)
         throw `No <packageName> provided.`
     if (!existsInRegistry(packageName))

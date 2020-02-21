@@ -40,7 +40,6 @@ cli.version(version)
             Runs the script listed as <scriptName> within the <packageName> directory.
             When multiple <packageName>:<scriptName> sets are provided, they are run in sequence.
     `)
-    .option('-f, --force', 'Overwrites existing saved registry package when used with "npj add <packageName>"')
 
 // ------------------------------------------------------------------------------
 
@@ -55,8 +54,8 @@ const options = {
     force: getOptionValue('force', false)
 }
 
-const wrapActionHandler = (action, callback) => (instance, args) => {
-    try { callback(args) }
+const wrapActionHandler = (action, callback) => (instance, ...args) => {
+    try { callback(instance, ...args) }
     catch (errText) {
         zaq.as('npj')
             .err(`Failed to ${action}:`, `${errText}\n${dim(`(See ${bold('npj --help')} for more information)`)}`)
@@ -66,8 +65,9 @@ const wrapActionHandler = (action, callback) => (instance, args) => {
 // ------------------------------------------------------------------------------
 
 cli.command('add')
+    .option('-f, --force', 'Overwrites existing saved registry package path.')
     .description(`Adds the current directory to your global registry. A message will be shown confirming the entry.`)
-    .action(wrapActionHandler('add current directory', controllers.handleAddCurrent))
+    .action(wrapActionHandler('add current directory', (args) => controllers.handleAddCurrent(args)))
 
 cli.command('ls')
     .description(`List all packages setup in the registry, and print their paths.`)
